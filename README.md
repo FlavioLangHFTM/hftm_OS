@@ -394,6 +394,24 @@ Snaps contain all the dependencies a package needs to run, while apt packages ex
 
 
 
+## <a name="bash"></a> Bash  
+```
+#!/usr/bin/env bash
+read -p "Enter username to create: " name
+if grep -q Microsoft /etc/group
+then
+        echo "The group Microsoft already exists, no need to create it"
+else
+        echo "Creating new group Microsoft"
+        groupadd Microsoft
+fi
+echo "Adding user " $name
+useradd -g Microsoft -G sudo -m -s /bin/bash $name
+```
+This script asks the user for a name. Then it checks if the group Microsoft already exists and if that isnt the case it creates it. Then it adds a new user with the specified name and the groups Microsoft and sudo-
+
+
+
 
 
 
