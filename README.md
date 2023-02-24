@@ -36,13 +36,10 @@ The .ssh folder and the authorized_keys file already exists on the virtual machi
     ![Correct Output](SSH_KEY_AUTH.PNG)  
   
 **4. Disable Login with Password**  
-`vim /etc/ssh/sshd_config`
-
-<!--
-PermitRootLogin no
-PubkeyAuthentication yes
-PasswordAuthentication no
--->
+`vim /etc/ssh/sshd_config`  
+Uncomment PasswordAuhentication and set it to `no` and then restart the service with `sudo service ssh restart`  
+When trying to login via putty and the passwort the following error will appear:  
+![pwLoginFailed](pwLoginFailed.PNG)
 
 <br>
 <br>
@@ -297,7 +294,107 @@ Number of days of warning before password expires       : 7
 ```
 
 To set special read permissions for the user Markus i need to use `setfacl` since this functionality seems to not be supported out of the box. <a>https://askubuntu.com/questions/487527/give-specific-user-permission-to-write-to-a-folder-using-w-notation</a>  
-`flavio@ubuhftmflavio:/$ sudo setfacl -m u:Markus:rx /hftm/verkauf/`
+`flavio@ubuhftmflavio:/$ sudo setfacl -m u:Markus:rx /hftm/verkauf/`  
+**4. Verifying Permissions**
+First i will log in as Hans and check if i can access the folders technik, firma and temp. Then i make sure that i cant open the folders verkauf, hr and projekt.  
+```
+flavio@ubuhftmflavio:/hftm$ su Hans
+Password:
+Hans@ubuhftmflavio:/hftm$ cd technik/
+Hans@ubuhftmflavio:/hftm/technik$ cd ../firma/
+Hans@ubuhftmflavio:/hftm/firma$ cd ../temp/
+Hans@ubuhftmflavio:/hftm/temp$ cd ../verkauf/
+bash: cd: ../verkauf/: Permission denied
+Hans@ubuhftmflavio:/hftm/temp$ cd ../hr
+bash: cd: ../hr: Permission denied
+Hans@ubuhftmflavio:/hftm/temp$ cd ../projekt/
+bash: cd: ../projekt/: Permission denied
+Hans@ubuhftmflavio:/hftm/temp$
+```  
+Next we will navigate to the temp folder and create two files. Then we will try to delete one of the files, which should succeed.
+
+```
+Hans@ubuhftmflavio:/hftm/temp$ touch file1
+Hans@ubuhftmflavio:/hftm/temp$ touch file2
+Hans@ubuhftmflavio:/hftm/temp$ ls
+file1  file2
+Hans@ubuhftmflavio:/hftm/temp$ rm file1
+Hans@ubuhftmflavio:/hftm/temp$ ls
+file2
+```  
+Now i will log in as Markus and try to delete the remaining file. This should not succeed.
+```
+flavio@ubuhftmflavio:/hftm/temp$ su Markus
+Password:
+Markus@ubuhftmflavio:/hftm/temp$ ls
+file2
+Markus@ubuhftmflavio:/hftm/temp$ rm file2
+rm: remove write-protected regular empty file 'file2'? yes
+rm: cannot remove 'file2': Operation not permitted
+```
+Now i will log in as Alfred and create a new file in the folder verkauf. Then i will switch to Markus and try to cat the file. This should display the content of the file. NExt i will try to remove the file, which will fail.  
+```
+flavio@ubuhftmflavio:/hftm/temp$ su Alfred
+Password:
+Alfred@ubuhftmflavio:/hftm/temp$ cd ../verkauf/
+Alfred@ubuhftmflavio:/hftm/verkauf$ touch testFile
+Alfred@ubuhftmflavio:/hftm/verkauf$ vim testFile
+Alfred@ubuhftmflavio:/hftm/verkauf$ su Markus
+Password:
+Markus@ubuhftmflavio:/hftm/verkauf$ cat testFile
+This is a test file. If you see this you have successfully opened this awesome testFile.
+Markus@ubuhftmflavio:/hftm/verkauf$ rm testFile
+rm: remove write-protected regular file 'testFile'? yes
+rm: cannot remove 'testFile': Permission denied
+Markus@ubuhftmflavio:/hftm/verkauf$
+```
+
+## <a name="package-management"></a> Package Management  
+**1. Adding a repository**  
+First we need to add the baseurl to /etc/apt/sources.list  
+`sudo vim /etc/apt/sources.list`
+![baseUrl](baseUrl.PNG)  
+Then we need to add the gpg key  
+`wget -qO- https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -`  
+**2. Installing mongodb**  
+The next step is to install the mongodb-org package. But this fails because of some unmet dependencies.  
+```
+The following packages have unmet dependencies:
+ mongodb-org-mongos : Depends: libssl1.1 (>= 1.1.1) but it is not installable
+ mongodb-org-server : Depends: libssl1.1 (>= 1.1.1) but it is not installable
+ mongodb-org-shell : Depends: libssl1.1 (>= 1.1.1) but it is not installable
+E: Unable to correct problems, you have held broken packages.
+```  
+So we will have to install those dependencies manually by adding `deb http://security.ubuntu.com/ubuntu focal-security main` to `/etc/apt/sources.list` and then runnung `sudo apt-get install libssl1.1`  
+After this is completed, we can install mongodb with `sudo apt-get install mongodb-org`  
+Now we can start the service and check its status  
+```
+flavio@ubuhftmflavio:~$ sudo systemctl start mongod
+flavio@ubuhftmflavio:~$ sudo systemctl status mongod
+● mongod.service - MongoDB Database Server
+     Loaded: loaded (/lib/systemd/system/mongod.service; disabled; vendor preset: enabled)
+     Active: active (running) since Fri 2023-02-24 20:57:10 UTC; 4min 20s ago
+       Docs: https://docs.mongodb.org/manual
+   Main PID: 1544 (mongod)
+     Memory: 220.4M
+        CPU: 971ms
+     CGroup: /system.slice/mongod.service
+             └─1544 /usr/bin/mongod --config /etc/mongod.conf
+
+Feb 24 2':57:10 hv-ubnt systemd[1]: Started MongoDB Database Server.
+```  
+Finally we need to persist the service  
+```
+flavio@ubuhftmflavio:~$ sudo systemctl enable mongod
+Created symlink /etc/systemd/system/multi-user.target.wants/mongod.service → /lib/systemd/system/mongod.service.
+```  
+
+**3. The difference between snap and apt**  
+Snaps contain all the dependencies a package needs to run, while apt packages expect the user to install all the needed dependencies. This makes it easy to install a complete software package. There is no hassle with dependencies. On the other hand you dont have the control of which exact version of the dependency you are installing.
+
+
+
+
 
 
 
