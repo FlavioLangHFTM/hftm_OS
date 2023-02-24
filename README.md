@@ -1,18 +1,15 @@
 # Workbook Flavio Lang
 
-[SSH-Key Authentication to the Virtualbox Ubuntu Server](#sshKeyAuth)  
-[Disks and Partitions](#DisksAndPartitions)  
-[Lemp Installation](#LempInstall)  
-[User Management](#user-management)  
-
-
-
+## Contents
+- [SSH-Key Authentication to the Virtualbox Ubuntu Server](#sshKeyAuth)  
+- [Disks and Partitions](#DisksAndPartitions)  
+- [Lemp Installation](#LempInstall)  
+- [User Management](#user-management)   
+- [Package Management](#package-management)  
+- [Bash](#bash) 
 <br>
 <br>
 <br>
-
-
-
 
 ## SSH-Key Authentication to the Virtualbox Ubuntu Server <a name="sshKeyAuth"></a>
 
@@ -408,24 +405,5 @@ fi
 echo "Adding user " $name
 useradd -g Microsoft -G sudo -m -s /bin/bash $name
 ```
-This script asks the user for a name. Then it checks if the group Microsoft already exists and if that isnt the case it creates it. Then it adds a new user with the specified name and the groups Microsoft and sudo-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- MongoDB FIX https://www.mongodb.com/community/forums/t/installing-mongodb-over-ubuntu-22-04/159931/5 -->
+This script asks the user for a name. Then it checks if the group Microsoft already exists and if that isnt the case it creates it. Then it adds a new user with the specified name and the groups Microsoft and sudo.
 
